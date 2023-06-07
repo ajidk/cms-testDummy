@@ -37,7 +37,12 @@ import {
   getComparator,
   stableSort,
 } from "../../components/DataTable/DataTables"
-import { deleteIdUser, getAllUser } from "../../features/users/actions"
+import {
+  deleteIdUser,
+  getAllUser,
+  updateIdUser,
+} from "../../features/users/actions"
+import { propsOpen } from "../../utils/interface"
 
 function TransitionLeft(props: any) {
   return <Slide {...props} direction="left" />
@@ -55,12 +60,6 @@ const style = {
   p: 4,
 }
 
-interface propsOpen {
-  delete: boolean
-  modal: boolean
-  detail?: { email: string; gender: string; phone: string; username: string }
-}
-
 const EnhancedTable = () => {
   const dispatch = useAppDispatch()
   const { allUser, loading, deleteUser } = useAppSelector(
@@ -72,8 +71,6 @@ const EnhancedTable = () => {
     modal: false,
   })
   const [gender, setGender] = useState(true)
-
-  console.log(open?.detail?.gender)
 
   useEffect(() => {
     open?.detail?.gender === "male" ? setGender(true) : setGender(false)
@@ -104,17 +101,27 @@ const EnhancedTable = () => {
     })
   }
 
+  const onHandleUpdate = () => {
+    const updateUser = {
+      email: open?.detail?.email,
+      gender: gender ? "male" : "female",
+      phone: open?.detail?.phone,
+      username: open?.detail?.username,
+    }
+
+    dispatch(
+      updateIdUser({ id: Number(open?.detail?.id), body: updateUser }),
+    ).then((item) => {
+      setOpen({ ...open, update: true, delete: false, modal: false })
+      dispatch(getAllUser({ limit: rowsPerPage, skip: 0 }))
+    })
+  }
+
   const handleChangePagination = (e: unknown, b: number) => {
     const pindah = b === 1 ? 0 : b * rowsPerPage - (rowsPerPage - 1)
 
-    // console.log(pindah)
     dispatch(getAllUser({ limit: rowsPerPage, skip: pindah }))
   }
-
-  //   const emptyRows =
-  //     Number(allUser?.limit) !== undefined
-  //       ? Math.max(0, (1 + ) * rowsPerPage - allUser?.total)
-  //       : 0
 
   const [search, setSearch] = useState("")
 
@@ -122,25 +129,14 @@ const EnhancedTable = () => {
     item.firstName.toLocaleLowerCase().includes(search),
   )
 
-  // console.log("filter usr", deleteUser)
-
   const visibleRows = useMemo(
     () => stableSort(filterUser, getComparator(order, orderBy)),
     [filterUser, order, orderBy],
   )
 
-  //   console.log(allUser?.limit)
-
   return (
     <Box sx={{ width: "100%" }}>
-      <Stack
-        direction="row"
-        justifyContent={"space-between"}
-        alignItems={"center"}
-        flex={1}
-        width={"full"}
-        my={4}
-      >
+      <Stack className="flex flex-1 md:!flex-row items-start gap-2 md:items-center justify-start md:justify-between my-5">
         <Typography fontSize={28} fontWeight={700} color="#404D61">
           Data Table
         </Typography>
@@ -277,7 +273,7 @@ const EnhancedTable = () => {
         </Backdrop>
       )}
       <Snackbar
-        open={open.delete}
+        open={open.delete || open.update}
         autoHideDuration={6000}
         onClose={() => setOpen({ delete: false, modal: false })}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -285,10 +281,12 @@ const EnhancedTable = () => {
       >
         <Alert
           onClose={() => setOpen({ delete: false, modal: false })}
-          severity="error"
+          severity={open.delete ? "error" : "success"}
           sx={{ width: "100%" }}
         >
-          {deleteUser?.firstName} belum berhasil di hapus
+          {open.delete
+            ? `${deleteUser?.firstName} belum berhasil di hapus`
+            : `${deleteUser?.firstName} berhasil di update`}
         </Alert>
       </Snackbar>
       <Modal
@@ -314,21 +312,42 @@ const EnhancedTable = () => {
               label="Nama"
               type="text"
               variant="standard"
+              id="standard-basic"
               value={open.detail?.username}
+              onChange={(e) =>
+                setOpen({
+                  ...open,
+                  detail: { ...open.detail, username: e.target.value },
+                })
+              }
             />
             <TextField
               label="Email"
               type="text"
               variant="standard"
+              id="standard-basic"
               value={open.detail?.email}
+              onChange={(e) =>
+                setOpen({
+                  ...open,
+                  detail: { ...open.detail, email: e.target.value },
+                })
+              }
             />
             <TextField
               label="Phone"
               type="text"
               variant="standard"
+              id="standard-basic"
               value={open.detail?.phone}
+              onChange={(e) =>
+                setOpen({
+                  ...open,
+                  detail: { ...open.detail, phone: e.target.value },
+                })
+              }
             />
-            {/* <TextField label="password" type="text" variant="standard" /> */}
+
             <FormControlLabel
               value={gender ? "Male" : "Female"}
               checked={gender}
@@ -341,9 +360,10 @@ const EnhancedTable = () => {
               <Button
                 variant="outlined"
                 className=""
-                startIcon={<CircularProgress value={10} />}
+                // startIcon={<CircularProgress value={10} />}
+                onClick={() => onHandleUpdate()}
               >
-                masak ga m
+                Update dulu
               </Button>
             </Box>
           </Box>

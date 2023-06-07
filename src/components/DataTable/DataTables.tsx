@@ -12,6 +12,10 @@ import { visuallyHidden } from "@mui/utils"
 import * as React from "react"
 import { useAppSelector } from "../../app/hooks"
 import { Icfilter } from "../../assets/svg"
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers"
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
+import { Dayjs } from "dayjs"
+import styled from "styled-components"
 
 export interface Data {
   email: string
@@ -146,8 +150,14 @@ export function EnhancedTableHead(props: EnhancedTableProps) {
   )
 }
 
+const CustomDate = styled.div`
+  .css-nxo287-MuiInputBase-input-MuiOutlinedInput-input {
+    padding: 6.5px 14px;
+  }
+`
 export function EnhancedTableToolbar() {
   const { allUser } = useAppSelector((state) => state.users)
+  const [value, setValue] = React.useState<Dayjs | null>(null)
 
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -172,7 +182,7 @@ export function EnhancedTableToolbar() {
           {allUser?.total} results found
         </Typography>
       </Box>
-      <Box>
+      <Box className="flex flex-row items-center gap-x-4">
         <Button
           variant="outlined"
           startIcon={<img src={Icfilter} alt="filter" />}
@@ -181,7 +191,12 @@ export function EnhancedTableToolbar() {
             Filter by
           </Typography>
         </Button>
-        {/* <DateRangeCalendar calendars={1} /> */}
+        <CustomDate>
+          <DatePicker
+            value={value}
+            onChange={(newValue) => setValue(newValue)}
+          />
+        </CustomDate>
       </Box>
     </Stack>
   )
